@@ -27,8 +27,6 @@ cache:
     - $HOME/cache
 
 matrix:
-  # allow_failures:
-  #   - os: osx
   fast_finish: true
   include:
     - os: linux
@@ -79,14 +77,6 @@ matrix:
       compiler: clang
       env: BUILD=osx TOXCORE_REPO_BRANCH="v0.1.4"
 
-    # We don't support old toxcore yet/anymore
-    # - os: linux
-    #   env: BUILD=linux TOXCORE_REPO=irungentoo/toxcore
-    #   compiler: gcc
-    # - os: linux
-    #   env: BUILD=linux TOXCORE_REPO=irungentoo/toxcore
-    #   compiler: clang
-
 git:
   depth: 5
 
@@ -99,20 +89,7 @@ script:
   - ./extra/travis/${BUILD}-script.sh
 
 after_failure:
-  - ./extra/travis/debug_failure.sh
-
-
-notifications:
-  email: false
-  irc:
-    channels:
-      - "chat.freenode.net#utox"
-    use_notice: true
-    skip_join: true
-    template:
-      - "TRAVIS #%{build_number} %{result} %{repository_name} %{build_url}"
+  - ./extra/travis/e.sh
 
 branches:
-  only:
-    - master
-    - develop
+  except:
