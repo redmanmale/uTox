@@ -731,25 +731,25 @@ static PCHAR *CommandLineToArgvA(PCHAR CmdLine, int *_argc) {
 }
 
 void tray_icon_init(HWND parent, HICON icon) {
-    NOTIFYICONDATA nid = {
+    NOTIFYICONDATAW nid = {
         .uFlags           = NIF_MESSAGE | NIF_ICON | NIF_TIP,
         .uCallbackMessage = WM_NOTIFYICON,
         .hIcon            = icon,
-        .szTip            = "uTox default tooltip",
+        .szTip            = L"uTox default tooltip",
         .hWnd             = parent,
         .cbSize           = sizeof(nid),
     };
 
-    Shell_NotifyIcon(NIM_ADD, &nid);
+    Shell_NotifyIconW(NIM_ADD, &nid);
 }
 
 static void tray_icon_decon(HWND parent) {
-    NOTIFYICONDATA nid = {
+    NOTIFYICONDATAW nid = {
         .hWnd   = parent,
         .cbSize = sizeof(nid),
     };
 
-    Shell_NotifyIcon(NIM_DELETE, &nid);
+    Shell_NotifyIconW(NIM_DELETE, &nid);
 }
 
 static void cursors_init(void) {

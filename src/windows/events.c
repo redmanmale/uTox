@@ -61,20 +61,20 @@ static void ShowContextMenu(void) {
     GetCursorPos(&pt);
     HMENU hMenu = CreatePopupMenu();
     if (hMenu) {
-        InsertMenu(hMenu, -1, MF_BYPOSITION, TRAY_SHOWHIDE, hidden ? "Restore" : "Hide");
+        InsertMenuW(hMenu, -1, MF_BYPOSITION, TRAY_SHOWHIDE, hidden ? L"Restore" : L"Hide");
 
-        InsertMenu(hMenu, -1, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+        InsertMenuW(hMenu, -1, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
 
-        InsertMenu(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_NONE) ? MF_CHECKED : 0),
-                   TRAY_STATUS_AVAILABLE, "Available");
-        InsertMenu(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_AWAY) ? MF_CHECKED : 0),
-                   TRAY_STATUS_AWAY, "Away");
-        InsertMenu(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_BUSY) ? MF_CHECKED : 0),
-                   TRAY_STATUS_BUSY, "Busy");
+        InsertMenuW(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_NONE) ? MF_CHECKED : 0),
+                   TRAY_STATUS_AVAILABLE, L"Available");
+        InsertMenuW(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_AWAY) ? MF_CHECKED : 0),
+                   TRAY_STATUS_AWAY, L"Away");
+        InsertMenuW(hMenu, -1, MF_BYPOSITION | ((self.status == TOX_USER_STATUS_BUSY) ? MF_CHECKED : 0),
+                   TRAY_STATUS_BUSY, L"Busy");
 
-        InsertMenu(hMenu, -1, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
+        InsertMenuW(hMenu, -1, MF_BYPOSITION | MF_SEPARATOR, 0, NULL);
 
-        InsertMenu(hMenu, -1, MF_BYPOSITION, TRAY_EXIT, "Exit");
+        InsertMenuW(hMenu, -1, MF_BYPOSITION, TRAY_EXIT, L"Exit");
 
         // note:    must set window to the foreground or the
         //          menu won't disappear when it should
