@@ -93,38 +93,49 @@ void openfilesend(void) {
 }
 
 void openfileavatar(void) {
-    char *filepath = calloc(1, UTOX_FILE_NAME_LENGTH);
-    if (!filepath) {
-        LOG_ERR("openfileavatar", "Could not allocate memory for path.");
-        return;
-    }
-
-    wchar_t dir[UTOX_FILE_NAME_LENGTH];
+    wchar_t filepath[UTOX_FILE_NAME_LENGTH] = { 0 };
+    wchar_t dir[UTOX_FILE_NAME_LENGTH] = { 0 };
     GetCurrentDirectoryW(COUNTOF(dir), dir);
 
-    OPENFILENAME ofn = {
-        .lStructSize = sizeof(OPENFILENAME),
-        .lpstrFilter = "Supported Images\0*.GIF;*.PNG;*.JPG;*.JPEG" // TODO: add all the supported types.
-                       "All Files\0*.*\0"
-                       "GIF Files\0*.GIF\0"
-                       "PNG Files\0*.PNG\0"
-                       "JPG Files\0*.JPG;*.JPEG\0"
-                       "\0",
+    OPENFILENAMEW ofn = {
+        .lStructSize = sizeof(OPENFILENAMEW),
+        .lpstrFilter = L"Supported Images\0*.GIF;*.PNG;*.JPG;*.JPEG" // TODO: add all the supported types.
+                       L"All Files\0*.*\0"
+                       L"GIF Files\0*.GIF\0"
+                       L"PNG Files\0*.PNG\0"
+                       L"JPG Files\0*.JPG;*.JPEG\0"
+                       L"\0",
         .hwndOwner = main_window.window,
         .lpstrFile = filepath,
         .nMaxFile  = UTOX_FILE_NAME_LENGTH,
         .Flags     = OFN_EXPLORER | OFN_FILEMUSTEXIST,
     };
 
+    char *path = NULL;
     while (1) { // loop until we have a good file or the user closed the dialog
-        if (!GetOpenFileName(&ofn)) {
+        if (!GetOpenFileNameW(&ofn)) {
             LOG_TRACE("NATIVE", "GetOpenFileName() failed when trying to grab an avatar.");
             break;
         }
 
+        path = calloc(1, UTOX_FILE_NAME_LENGTH);
+        if (!path) {
+            LOG_ERR("openfileavatar", "Could not allocate memory for path.");
+            return;
+        }
+
+        native_to_utf8str(filepath, path, UTOX_FILE_NAME_LENGTH);
+
+        FILE *file = native_get_file_simple(path, UTOX_FILE_OPTS_READ);
+        if (!file) {
+            LOG_ERR("NATIVE", "Could not open file: %s", path);
+            continue;
+        }
+
         int width, height, bpp, size;
-        uint8_t *file_data = stbi_load(filepath, &width, &height, &bpp, 0);
+        uint8_t *file_data = stbi_load_from_file(file, &width, &height, &bpp, 0);
         uint8_t *img = stbi_write_png_to_mem(file_data, 0, width, height, bpp, &size);
+        fclose(file);
         free(file_data);
 
         if (!img) {
@@ -155,7 +166,9 @@ void openfileavatar(void) {
         break;
     }
 
-    free(filepath);
+    if (path) {
+        free(path);
+    }
     SetCurrentDirectoryW(dir);
 }
 
