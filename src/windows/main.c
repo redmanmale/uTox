@@ -606,39 +606,39 @@ void freefonts() {
 }
 
 void loadfonts() {
-    LOGFONT lf = {
+    LOGFONTW lf = {
         .lfWeight = FW_NORMAL,
         //.lfCharSet = ANSI_CHARSET,
         .lfOutPrecision = OUT_TT_PRECIS,
         .lfQuality      = DEFAULT_QUALITY,
-        .lfFaceName     = "DejaVu Sans",
+        .lfFaceName     = L"DejaVu Sans",
     };
 
     lf.lfHeight          = (SCALE(-24) - 1) / 2;
-    font[FONT_TEXT]      = CreateFontIndirect(&lf);
+    font[FONT_TEXT]      = CreateFontIndirectW(&lf);
     lf.lfHeight          = (SCALE(-22) - 1) / 2;
-    font[FONT_STATUS]    = CreateFontIndirect(&lf);
+    font[FONT_STATUS]    = CreateFontIndirectW(&lf);
     lf.lfHeight          = (SCALE(-24) - 1) / 2;
-    font[FONT_LIST_NAME] = CreateFontIndirect(&lf);
+    font[FONT_LIST_NAME] = CreateFontIndirectW(&lf);
     lf.lfWeight          = FW_BOLD;
-    font[FONT_TITLE]     = CreateFontIndirect(&lf);
+    font[FONT_TITLE]     = CreateFontIndirectW(&lf);
     lf.lfHeight          = (SCALE(-28) - 1) / 2;
-    font[FONT_SELF_NAME] = CreateFontIndirect(&lf);
+    font[FONT_SELF_NAME] = CreateFontIndirectW(&lf);
     lf.lfHeight          = (SCALE(-20) - 1) / 2;
-    font[FONT_MISC]      = CreateFontIndirect(&lf);
+    font[FONT_MISC]      = CreateFontIndirectW(&lf);
     /*lf.lfWeight = FW_NORMAL; //FW_LIGHT <- light fonts dont antialias
-    font[FONT_MSG_NAME] = CreateFontIndirect(&lf);
+    font[FONT_MSG_NAME] = CreateFontIndirectW(&lf);
     lf.lfHeight = F(11);
-    font[FONT_MSG] = CreateFontIndirect(&lf);
+    font[FONT_MSG] = CreateFontIndirectW(&lf);
     lf.lfUnderline = 1;
-    font[FONT_MSG_LINK] = CreateFontIndirect(&lf);*/
+    font[FONT_MSG_LINK] = CreateFontIndirectW(&lf);*/
 
     SelectObject(main_window.draw_DC, font[FONT_TEXT]);
-    TEXTMETRIC tm;
-    GetTextMetrics(main_window.draw_DC, &tm);
+    TEXTMETRICW tm;
+    GetTextMetricsW(main_window.draw_DC, &tm);
     font_small_lineheight = tm.tmHeight + tm.tmExternalLeading;
     // SelectObject(main_window.draw_DC, font[FONT_MSG]);
-    // GetTextMetrics(main_window.draw_DC, &tm);
+    // GetTextMetricsW(main_window.draw_DC, &tm);
     // font_msg_lineheight = tm.tmHeight + tm.tmExternalLeading;
 }
 
