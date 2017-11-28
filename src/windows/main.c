@@ -139,7 +139,14 @@ void openfileavatar(void) {
         free(file_data);
 
         if (!img) {
-            MessageBox(NULL, (const char *)S(CANT_FIND_FILE_OR_EMPTY), NULL, MB_ICONWARNING);
+            const uint8_t message_length = SLEN(CANT_FIND_FILE_OR_EMPTY);
+
+            wchar_t message[message_length];
+            memset(message, 0, message_length);
+
+            utf8_to_nativestr(S(CANT_FIND_FILE_OR_EMPTY), message, message_length * 2);
+
+            MessageBoxW(NULL, message, NULL, MB_ICONWARNING);
             continue;
         }
 
@@ -158,7 +165,12 @@ void openfileavatar(void) {
             len += sprint_humanread_bytes(message + len, sizeof(message) - len, UTOX_AVATAR_MAX_DATA_LENGTH);
             message[len++] = '\0';
 
-            MessageBox(NULL, message, NULL, MB_ICONWARNING);
+            wchar_t message_native[len];
+            memset(message_native, 0, len);
+
+            utf8_to_nativestr(message, message_native, len * 2);
+
+            MessageBoxW(NULL, message_native, NULL, MB_ICONWARNING);
             continue;
         }
 
