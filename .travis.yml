@@ -65,16 +65,3 @@ script:
 
 after_failure:
   - ./extra/travis/debug_failure.sh
-
-
-notifications:
-  email: false
-  irc:
-    channels:
-      - "chat.freenode.net#utox"
-    use_notice: true
-    skip_join: true
-    template:
-      - "TRAVIS Build %{result} %{branch} %{message} %{build_url}"
-
-
