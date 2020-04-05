@@ -65,3 +65,12 @@ script:
 
 after_failure:
   - ./extra/travis/debug_failure.sh
+
+deploy:
+  provider: releases
+  api_key:
+    secure: "f3fSAZDqpIdB5BWqkLrhYhBweE97625Ib3F9KRQi7jSBrhe0/FZchfGuCIm6Cf/ITa53es65+NvW0nbnqtiASTKFmIqWUlIXEmbOmbylQGFGyqhbfcOr+eYarZjVAgCv3XELwb7bp6pvgdkDyLOEDXXAeaYmB0VjexRlgRK9ewgAaXsXNCowxrCrhQ/VgoPJbP/MOuevVaDrukXejZ0mopnGLqMpyYRHXM/05V0fLEJnsBzswFfyf6S4NeayeIqVBwE27vt8SFP6u82RSEKSBEWweV+TImDRJ7PJFndvDO4cPL3cDJr7TDB2/Q9ndsp1rXjXIsWpuSoUPmoyzlWvaGSQ1BL0cWSEH7KKPkASj8XCL36l6kw6WJBKGB2gzEFxrYXeLnSyH06Gs8q8spKf4sF1bm4BldwJ2geT5gwmjmOGXLW7dlJdvfZlHfCO7YZWFeM6aJ+ISnyE+vsHkGov2BjxUuFcVZXbLyjkenq9SNJs466C8WgF1GY4NOYXJlzoOcFQRfxgVDLoETWN8PRaN+zu/TC1iirIshjsRrDXprB7r52ynOCuAZ3WXpjHRpOPY8pHSv63+bJ6m+SPlSrUzeonaupi4ciiQyesnPQ8JJt4YZ6KOgmW2MokR0JtaVs/0OUXSRKbRK4qA+SNiRbg8SHupUQHR9eIWpjbVi+SqXE="
+  file: utox.exe
+  skip_cleanup: true
+  on:
+    tags: true
