@@ -54,8 +54,8 @@ static void callback_friend_message(Tox *UNUSED(tox), uint32_t friend_number, TO
     }
 
     if (!message) {
-        message = (const uint8_t *)"";
-        length  = 0;
+        LOG_ERR("Tox Callbacks", "Friend\t%u\t--\tNULL message payload", friend_number);
+        return;
     }
 
     switch (type) {
@@ -218,8 +218,8 @@ static void callback_group_message(Tox *UNUSED(tox), uint32_t gid, uint32_t pid,
     }
 
     if (!message) {
-        message = (const uint8_t *)"";
-        length  = 0;
+        LOG_ERR("Tox Callbacks", "Group %u peer %u NULL message payload", gid, pid);
+        return;
     }
 
     switch (type) {

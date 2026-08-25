@@ -80,7 +80,7 @@ void group_reset_peerlist(GROUPCHAT *g);
 /* Frees a group */
 void group_free(GROUPCHAT *g);
 
-/* Creates a notification for messages received  */
+/* Creates a notification for messages received. `g` must not be NULL. */
 void group_notify_msg(GROUPCHAT *g, const char *msg, size_t length);
 
 /* Gets the group qt the specified index */

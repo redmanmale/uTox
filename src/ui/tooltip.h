@@ -25,6 +25,7 @@ bool tooltip_mdown(void);
 bool tooltip_mup(void);
 
 void tooltip_show(void);
+/* `text` is required; NULL is a programmer error. */
 void tooltip_new(MAYBE_I18NAL_STRING *text);
 
 #endif
