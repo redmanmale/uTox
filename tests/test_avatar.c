@@ -278,6 +278,43 @@ bool test_avatar_oversized_file(void) {
     return true;
 }
 
+bool test_avatar_decode_fail_and_set_self_fail(void) {
+    reset_avatar();
+    char id[TOX_PUBLIC_KEY_SIZE * 2 + 1];
+    hex64(id, 'F');
+    cleanup_avatar_file(id);
+
+    uint8_t png[8];
+    memset(png, 0x55, sizeof png);
+    if (!avatar_save(id, png, sizeof png)) {
+        FAIL("save for decode-fail");
+    }
+
+    fail_native_image = 1;
+    AVATAR av = { 0 };
+    if (avatar_init(id, &av)) {
+        avatar_unset(&av);
+        fail_native_image = 0;
+        FAIL("decode fail on disk image must not init");
+    }
+    fail_native_image = 0;
+    cleanup_avatar_file(id);
+
+    avatar_init_self();
+    if (!self.avatar) {
+        FAIL("alloc self avatar");
+    }
+    fail_native_image = 1;
+    if (self_set_and_save_avatar(png, sizeof png)) {
+        fail_native_image = 0;
+        FAIL("set_self fail must not save");
+    }
+    fail_native_image = 0;
+    free(self.avatar);
+    self.avatar = NULL;
+    return true;
+}
+
 int main(void) {
     int result = 0;
     settings.portable_mode = true;
@@ -285,6 +322,7 @@ int main(void) {
     RUN_TEST(test_avatar_self_and_online);
     RUN_TEST(test_avatar_move_on_nospam_change);
     RUN_TEST(test_avatar_oversized_file);
+    RUN_TEST(test_avatar_decode_fail_and_set_self_fail);
     reset_avatar();
     return result;
 }

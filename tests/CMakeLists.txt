@@ -132,3 +132,8 @@ add_executable(test_qr test_qr.c)
 set_target_properties(test_qr PROPERTIES COMPILE_FLAGS "-Wno-unused-parameter")
 target_link_libraries(test_qr utox-test-mock-flist utox-test-mock-domain utox-test-mock qrcodegen stb pthread m)
 add_test(NAME test_qr COMMAND test_qr)
+
+# libFuzzer parser targets (Clang, -DENABLE_FUZZ=ON). Not built on Windows/GCC.
+if(ENABLE_FUZZ)
+    add_subdirectory(fuzz)
+endif()

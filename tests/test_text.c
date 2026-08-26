@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "../src/text.c"
@@ -302,6 +303,33 @@ bool test_sprint_humanread_bytes(void) {
     return true;
 }
 
+bool test_utf8_property_garbage(void) {
+    uint32_t rng = 0xC0FFEEU;
+    for (int round = 0; round < 48; round++) {
+        uint8_t buf[40];
+        for (size_t i = 0; i < sizeof buf; i++) {
+            rng = rng * 1664525u + 1013904223u;
+            buf[i] = (uint8_t)(rng >> 24);
+        }
+        int n = utf8_validate(buf, (int)sizeof buf);
+        if (n < 0 || n > (int)sizeof buf) {
+            FAIL("utf8_validate length %d", n);
+        }
+
+        uint8_t padded[48];
+        memcpy(padded, buf, sizeof buf);
+        memset(padded + sizeof buf, 0, sizeof padded - sizeof buf);
+        (void)utf8_len((char *)padded);
+
+        char *html = tohtml((char *)padded, n);
+        if (!html) {
+            FAIL("tohtml NULL on validated prefix");
+        }
+        free(html);
+    }
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_utf8_len_and_validate);
@@ -309,5 +337,6 @@ int main(void) {
     RUN_TEST(test_hex_and_case);
     RUN_TEST(test_tohtml_and_shrink);
     RUN_TEST(test_sprint_humanread_bytes);
+    RUN_TEST(test_utf8_property_garbage);
     return result;
 }

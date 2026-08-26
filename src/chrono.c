@@ -17,7 +17,9 @@ static void chrono_thread(void *args) {
     CHRONO_INFO *info = args;
     chrono_thread_init = true;
     while (info->ptr != info->target) {
-        info->ptr += info->step;
+        /* ptr/target are used as integer counters (tests pass small intptr values).
+         * Pointer arithmetic from NULL is UB under UBSAN — advance via integer math. */
+        info->ptr = (uint8_t *)(uintptr_t)((intptr_t)(uintptr_t)info->ptr + info->step);
         yieldcpu(info->interval_ms);
     }
     chrono_thread_init = false;

@@ -11,6 +11,9 @@ fi
 if [ -z "${LSAN_OPTIONS+x}" ]; then
     export LSAN_OPTIONS=print_suppressions=0
 fi
+if [ -z "${UBSAN_OPTIONS+x}" ]; then
+    export UBSAN_OPTIONS=halt_on_error=1:print_stacktrace=1:abort_on_error=1
+fi
 
 # remove ./tox folder before each test to have clean environment
 rm -rf ./tox

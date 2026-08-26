@@ -314,7 +314,7 @@ static void callback_group_peer_list_changed(Tox *tox, uint32_t gid, void *UNUSE
         /* uTox doesnt' really use this for too much so let's fuck with the random seed.
          * If you know crypto, and cringe, I know me too... you can blame @irungentoo */
         srand(pkey_to_number);
-        peer->name_color = RGB(rand(), rand(), rand());
+        peer->name_color = RGB(rand() & 0xFF, rand() & 0xFF, rand() & 0xFF);
         g->peer[i]       = peer;
     }
     g->peer_count = number_peers;

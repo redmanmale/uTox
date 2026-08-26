@@ -15,6 +15,7 @@
 #include "native/thread.h"
 #include "native/time.h"
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -305,14 +306,32 @@ static bool ft_find_resumeable(FILE_TRANSFER *ft) {
         return false;
     }
 
-    FILE_TRANSFER resume_file;
-    bool read_resumeable = fread(&resume_file, size, 1, resume_disk);
+    /* Read as bytes first: corrupt .ftinfo can put non-0/1 in bool fields, and
+     * loading those as _Bool is undefined behavior (UBSAN catches it). */
+    unsigned char raw[sizeof(FILE_TRANSFER)];
+    bool read_resumeable = fread(raw, size, 1, resume_disk) == 1;
     fclose(resume_disk);
 
     if (!read_resumeable) {
         LOG_ERR("FileTransfer", "Failed to read resumeable file.");
         return false;
     }
+
+    const size_t bool_fields[] = {
+        offsetof(FILE_TRANSFER, in_use),     offsetof(FILE_TRANSFER, incoming),
+        offsetof(FILE_TRANSFER, in_memory),  offsetof(FILE_TRANSFER, avatar),
+        offsetof(FILE_TRANSFER, inline_img), offsetof(FILE_TRANSFER, resumeable),
+        offsetof(FILE_TRANSFER, decon_wait),
+    };
+    for (size_t i = 0; i < sizeof bool_fields / sizeof bool_fields[0]; i++) {
+        if (raw[bool_fields[i]] > 1) {
+            LOG_ERR("FileTransfer", "Unable to resume this file, invalid flag byte");
+            return false;
+        }
+    }
+
+    FILE_TRANSFER resume_file;
+    memcpy(&resume_file, raw, sizeof resume_file);
 
     if (!resume_file.resumeable
         || !resume_file.in_use

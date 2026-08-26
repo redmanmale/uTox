@@ -332,6 +332,39 @@ bool test_do_tox_url(void) {
     return true;
 }
 
+bool test_commands_garbage_inputs(void) {
+    reset_cmd();
+    char *cmd = NULL;
+    char *arg = NULL;
+
+    char only_slash[] = "/";
+    if (utox_run_command(only_slash, 1, &cmd, &arg, 1) == (uint16_t)-1) {
+        FAIL("lone slash should not succeed");
+    }
+
+    char spaces[] = "/   ";
+    (void)utox_run_command(spaces, 4, &cmd, &arg, 1);
+
+    char longcmd[128];
+    memset(longcmd, 'a', sizeof longcmd - 1);
+    longcmd[0] = '/';
+    longcmd[sizeof longcmd - 1] = 0;
+    (void)utox_run_command(longcmd, (uint16_t)(sizeof longcmd - 1), &cmd, &arg, 1);
+
+    uint8_t junk[64];
+    memcpy(junk, "tox:", 4);
+    for (size_t i = 4; i < sizeof junk; i++) {
+        junk[i] = (uint8_t)(0x20 + (i * 13u) % 90);
+    }
+    do_tox_url(junk, (int)sizeof junk);
+
+    uint8_t pct[] = "tox:ab%";
+    do_tox_url(pct, (int)sizeof pct - 1);
+    uint8_t ctl[] = { 't', 'o', 'x', ':', 1, 2, 3, 4 };
+    do_tox_url(ctl, (int)sizeof ctl);
+    return true;
+}
+
 bool test_slash_helpers_direct(void) {
     reset_cmd();
     if (slash_send_file(&cmd_friend, NULL, 0)) {
@@ -363,6 +396,7 @@ int main(void) {
     RUN_TEST(test_run_command_untrusted_and_plain);
     RUN_TEST(test_run_command_alias_invite_topic_file_device);
     RUN_TEST(test_do_tox_url);
+    RUN_TEST(test_commands_garbage_inputs);
     RUN_TEST(test_slash_helpers_direct);
     return result;
 }

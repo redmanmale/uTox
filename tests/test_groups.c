@@ -277,6 +277,41 @@ bool test_group_title_size_error(void) {
     return true;
 }
 
+bool test_group_edges_null_name_empty_msg_last_peer(void) {
+    reset_groups();
+    GROUPCHAT *g = group_create(0, false, "Room");
+    if (!g) {
+        FAIL("create");
+    }
+
+    const uint32_t last = UTOX_MAX_GROUP_PEERS - 1;
+    group_peer_add(g, last, false, 0xabcdef);
+    if (!g->peer[last] || g->peer_count != 1) {
+        FAIL("last peer slot");
+    }
+
+    g->our_peer_number = last;
+    uint32_t before = group_msg_count;
+    if (group_add_message(g, last, (const uint8_t *)"x", 1, MSG_TYPE_TEXT) == UINT32_MAX
+        || group_msg_count <= before) {
+        FAIL("message from last peer slot");
+    }
+    (void)group_add_message(g, last, (const uint8_t *)"", 0, MSG_TYPE_TEXT);
+
+    group_peer_name_change(g, last, NULL, 9);
+    if (!g->peer[last] || g->peer[last]->name_length != 0) {
+        FAIL("NULL name is empty");
+    }
+
+    group_peer_name_change(NULL, 0, (const uint8_t *)"x", 1);
+    if (group_add_message(NULL, 0, (const uint8_t *)"x", 1, MSG_TYPE_TEXT) != UINT32_MAX) {
+        FAIL("NULL group add message");
+    }
+
+    raze_groups();
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_group_create_peers_messages);
@@ -284,6 +319,7 @@ int main(void) {
     RUN_TEST(test_group_peer_del_null_list);
     RUN_TEST(test_group_reinit_does_not_double_count);
     RUN_TEST(test_group_title_size_error);
+    RUN_TEST(test_group_edges_null_name_empty_msg_last_peer);
     raze_groups();
     return result;
 }

@@ -14,24 +14,29 @@ jobs:
             build: linux
             compiler: gcc
             werror: "ON"
+            fuzz: "OFF"
 
           - name: "Linux Clang"
             os: ubuntu-24.04
             build: linux
             compiler: clang
             werror: "ON"
+            # One build: unit tests (ASAN+UBSAN) + libFuzzer (fuzzer+ASAN+UBSAN).
+            fuzz: "ON"
 
           - name: "Windows x64 (cross)"
             os: ubuntu-24.04
             build: windows
             compiler: x86_64-w64-mingw32-gcc
             werror: "OFF"
+            fuzz: "OFF"
 
           - name: "macOS"
             os: macos-latest
             build: osx
             compiler: clang
             werror: "OFF"
+            fuzz: "OFF"
     steps:
       - uses: actions/checkout@v7
         with:
@@ -79,6 +84,8 @@ jobs:
           BUILD: ${{ matrix.build }}
           COMPILER: ${{ matrix.compiler }}
           ENABLE_WERROR: ${{ matrix.werror }}
+          ENABLE_FUZZ: ${{ matrix.fuzz }}
+          FUZZ_RUNS: "1000"
       - name: Dump cache on failure
         if: failure()
         run: ./extra/travis/debug_failure.sh || true

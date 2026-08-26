@@ -525,6 +525,114 @@ bool test_group_message_peers_connected(void) {
     return true;
 }
 
+bool test_tox_callbacks_boundaries(void) {
+    reset_cb();
+    FRIEND *f = make_friend(0);
+    if (!f) {
+        FAIL("make friend");
+    }
+
+    /* Exact TOX_MAX_* lengths and invalid UTF-8 truncation on name/status/request. */
+    uint8_t max_name[TOX_MAX_NAME_LENGTH];
+    memset(max_name, 'N', sizeof max_name);
+    mock_cb_friend_name(TOX_DUMMY, 0, max_name, TOX_MAX_NAME_LENGTH, NULL);
+    if (mock_last_utox_msg != FRIEND_NAME || mock_last_utox_p2 != TOX_MAX_NAME_LENGTH
+        || !mock_last_utox_data || ((uint8_t *)mock_last_utox_data)[0] != 'N') {
+        FAIL("max name length");
+    }
+
+    uint8_t bad_utf8[] = { 'A', 0xC3, 'B' }; /* incomplete 2-byte then ascii */
+    mock_cb_friend_name(TOX_DUMMY, 0, bad_utf8, sizeof bad_utf8, NULL);
+    if (mock_last_utox_msg != FRIEND_NAME || mock_last_utox_p2 != 1
+        || !mock_last_utox_data || ((uint8_t *)mock_last_utox_data)[0] != 'A') {
+        FAIL("invalid utf8 name truncated");
+    }
+
+    uint8_t max_status[TOX_MAX_STATUS_MESSAGE_LENGTH];
+    memset(max_status, 'S', sizeof max_status);
+    mock_cb_friend_status_message(TOX_DUMMY, 0, max_status, TOX_MAX_STATUS_MESSAGE_LENGTH, NULL);
+    if (mock_last_utox_msg != FRIEND_STATUS_MESSAGE
+        || mock_last_utox_p2 != TOX_MAX_STATUS_MESSAGE_LENGTH) {
+        FAIL("max status message length");
+    }
+
+    uint8_t max_msg[TOX_MAX_MESSAGE_LENGTH];
+    memset(max_msg, 'M', sizeof max_msg);
+    uint32_t texts = text_count;
+    mock_cb_friend_message(TOX_DUMMY, 0, TOX_MESSAGE_TYPE_NORMAL, max_msg, TOX_MAX_MESSAGE_LENGTH, NULL);
+    if (text_count != texts + 1 || last_text_len != TOX_MAX_MESSAGE_LENGTH) {
+        FAIL("max friend message length");
+    }
+
+    mock_cb_friend_message(TOX_DUMMY, 0, TOX_MESSAGE_TYPE_NORMAL, (const uint8_t *)"", 0, NULL);
+    if (text_count != texts + 2 || last_text_len != 0) {
+        FAIL("zero-length friend message");
+    }
+
+    /* TCP online is still "online" (!!status). */
+    f->online = false;
+    uint32_t on = ft_online_count;
+    mock_cb_friend_connection_status(TOX_DUMMY, 0, TOX_CONNECTION_TCP, NULL);
+    if (ft_online_count != on + 1 || mock_last_utox_msg != FRIEND_ONLINE || mock_last_utox_p2 != 1) {
+        FAIL("TCP connection is online");
+    }
+
+    uint8_t pk[TOX_PUBLIC_KEY_SIZE];
+    memset(pk, 0xCD, sizeof pk);
+    uint8_t req_msg[8];
+    memset(req_msg, 'R', sizeof req_msg);
+    /* Invalid UTF-8 in the middle truncates the stored request message. */
+    req_msg[2] = 0xC3;
+    mock_cb_friend_request(TOX_DUMMY, pk, req_msg, 4, NULL);
+    FREQUEST *r = get_frequest(mock_last_utox_p1);
+    if (!r || r->length != 2 || memcmp(r->msg, "RR", 2) != 0) {
+        FAIL("friend request utf8 truncate");
+    }
+
+    /* Empty / NULL invite cookie: join may still be attempted with length 0. */
+    clear_utox_posted();
+    mock_tox_conference_join_fail = false;
+    mock_tox_conference_join_result = 7;
+    mock_cb_conference_invite(TOX_DUMMY, 0, TOX_CONFERENCE_TYPE_TEXT, NULL, 0, NULL);
+    if (!get_group(7) || mock_last_utox_msg != GROUP_ADD) {
+        FAIL("zero-length invite cookie");
+    }
+
+    uint8_t topic[TOX_MAX_NAME_LENGTH];
+    memset(topic, 'T', sizeof topic);
+    mock_cb_conference_title(TOX_DUMMY, 7, 0, topic, TOX_MAX_NAME_LENGTH, NULL);
+    if (mock_last_utox_msg != GROUP_TOPIC || mock_last_utox_p2 != TOX_MAX_NAME_LENGTH) {
+        FAIL("max topic length");
+    }
+
+    /* Peer list over the hard cap is clamped. */
+    GROUPCHAT *g = group_create(3, false, "Cap");
+    if (!g) {
+        FAIL("cap group");
+    }
+    mock_tox_conference_peer_count_n = UTOX_MAX_GROUP_PEERS + 40;
+    memset(mock_tox_conference_peer_name, 'P', TOX_MAX_NAME_LENGTH);
+    mock_tox_conference_peer_name_len         = 1;
+    mock_tox_conference_peer_name_size_report = 1;
+    mock_cb_conference_peer_list_changed(TOX_DUMMY, 3, NULL);
+    g = get_group(3);
+    if (!g || g->peer_count != UTOX_MAX_GROUP_PEERS) {
+        FAIL("peer count clamp got %u", g ? g->peer_count : 0);
+    }
+
+    /* Peer id at last valid slot after rebuild. */
+    mock_cb_conference_message(TOX_DUMMY, 3, UTOX_MAX_GROUP_PEERS - 1, TOX_MESSAGE_TYPE_NORMAL,
+                               (const uint8_t *)"edge", 4, NULL);
+    if (last_group_msg_type != MSG_TYPE_TEXT) {
+        FAIL("message from last peer index");
+    }
+
+    mock_cb_conference_message(TOX_DUMMY, 3, 0, (TOX_MESSAGE_TYPE)99, (const uint8_t *)"x", 1, NULL);
+
+    mock_cb_conference_peer_name(TOX_DUMMY, 3, UTOX_MAX_GROUP_PEERS, (const uint8_t *)"X", 1, NULL);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -535,6 +643,7 @@ int main(void) {
     RUN_TEST(test_friend_receipt_and_connection);
     RUN_TEST(test_group_invite_and_topic);
     RUN_TEST(test_group_message_peers_connected);
+    RUN_TEST(test_tox_callbacks_boundaries);
     free_friends();
     raze_groups();
     return result;

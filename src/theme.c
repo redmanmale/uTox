@@ -728,7 +728,21 @@ static uint32_t try_parse_hex_colour(char *color, bool *error) {
 }
 
 static void read_custom_theme(const uint8_t *data, size_t length) {
-    char *buf = (char *)data;
+    if (!data || length == 0) {
+        return;
+    }
+
+    /* Work on a NUL-terminated copy so a last line without \n cannot walk off
+     * the buffer, and so the caller's blob is not mutated. */
+    char *owned = malloc(length + 1);
+    if (!owned) {
+        LOG_ERR("Theme", "Unable to allocate %zuB for custom theme.", length + 1);
+        return;
+    }
+    memcpy(owned, data, length);
+    owned[length] = '\0';
+
+    char *buf = owned;
     size_t pos = 0;
 
     while (pos < length) {
@@ -781,6 +795,8 @@ static void read_custom_theme(const uint8_t *data, size_t length) {
         /* try_parse_hex_colour already returns a native RGB() value. */
         *colorp = col;
     }
+
+    free(owned);
 }
 
 static uint8_t *utox_data_load_custom_theme(size_t *out) {

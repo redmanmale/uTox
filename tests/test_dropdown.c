@@ -216,6 +216,26 @@ bool test_dropdown_null_onselect_and_draw(void) {
     return true;
 }
 
+bool test_dropdown_mdown_skip_mup_closes(void) {
+    reset_counts();
+    DROPDOWN d = make_drop(3);
+    if (!open_at(&d, 4, 4, 80, 20) || !d.open) {
+        FAIL("open");
+    }
+    /* Hover a row so skip_mup is set, then leave the list without releasing. */
+    dropdown_mmove(&d, 0, 0, 80, 20, 4, 21, 0, 0);
+    if (!d.skip_mup) {
+        FAIL("hover open list should set skip_mup");
+    }
+    dropdown_mmove(&d, 0, 0, 80, 20, -20, 4, 0, 0);
+    d.mouseover = false;
+    d.skip_mup  = true;
+    if (!dropdown_mdown(&d) || d.open) {
+        FAIL("mdown with skip_mup and no mouseover should close");
+    }
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_dropdown_open_select_close)
@@ -223,5 +243,6 @@ int main(void) {
     RUN_TEST(test_dropdown_over_bounds)
     RUN_TEST(test_dropdown_list_helpers)
     RUN_TEST(test_dropdown_null_onselect_and_draw)
+    RUN_TEST(test_dropdown_mdown_skip_mup_closes)
     return result;
 }

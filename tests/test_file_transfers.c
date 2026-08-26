@@ -565,6 +565,44 @@ bool test_incoming_resume_size_mismatch(void) {
     return true;
 }
 
+bool test_incoming_resume_garbage_blob(void) {
+    reset_ft();
+    char info[UTOX_FILE_NAME_LENGTH];
+    incoming_ftinfo_name(info, sizeof info);
+
+    FILE_TRANSFER blob;
+    memset(&blob, 0xA5, sizeof blob);
+    FILE *fp = utox_get_file(info, NULL, UTOX_FILE_OPTS_WRITE | UTOX_FILE_OPTS_MKDIR);
+    if (!fp) {
+        FAIL("write garbage .ftinfo");
+    }
+    fwrite(&blob, sizeof blob, 1, fp);
+    fclose(fp);
+
+    const uint8_t name[] = "g.bin";
+    mock_cb_file_recv(TOX_DUMMY, 0, incoming_fileno(0), TOX_FILE_KIND_DATA, 4, name, sizeof name - 1, NULL);
+    if (mock_last_utox_msg != FILE_INCOMING_NEW) {
+        FAIL("garbage .ftinfo must fall back to new incoming");
+    }
+    cancel_open();
+    utox_get_file(info, NULL, UTOX_FILE_OPTS_DELETE);
+
+    memset(&blob, 0, sizeof blob);
+    blob.in_use     = true;
+    blob.incoming   = true;
+    blob.resumeable = true;
+    fp = utox_get_file(info, NULL, UTOX_FILE_OPTS_WRITE | UTOX_FILE_OPTS_MKDIR);
+    if (!fp) {
+        FAIL("write empty-path .ftinfo");
+    }
+    fwrite(&blob, sizeof blob, 1, fp);
+    fclose(fp);
+    mock_cb_file_recv(TOX_DUMMY, 0, incoming_fileno(1), TOX_FILE_KIND_DATA, 4, name, sizeof name - 1, NULL);
+    cancel_open();
+    utox_get_file(info, NULL, UTOX_FILE_OPTS_DELETE);
+    return true;
+}
+
 bool test_start_write_unwritable(void) {
     reset_ft();
     const uint8_t name[] = "a.bin";
@@ -674,6 +712,7 @@ int main(void) {
     RUN_TEST(test_friend_online_without_resume_files);
     RUN_TEST(test_incoming_resume_from_disk);
     RUN_TEST(test_incoming_resume_size_mismatch);
+    RUN_TEST(test_incoming_resume_garbage_blob);
     RUN_TEST(test_start_write_unwritable);
     RUN_TEST(test_incoming_chunk_speed);
     RUN_TEST(test_incoming_inline_not_png);

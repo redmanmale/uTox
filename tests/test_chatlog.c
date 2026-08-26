@@ -561,6 +561,35 @@ bool test_export_calendar_and_eof(void) {
     return true;
 }
 
+bool test_chatlog_garbage_file(void) {
+    char id[TOX_PUBLIC_KEY_SIZE * 2 + 1];
+    memset(id, 'B', TOX_PUBLIC_KEY_SIZE * 2);
+    id[TOX_PUBLIC_KEY_SIZE * 2] = 0;
+    unlink_log(id);
+
+    native_create_dir((uint8_t *)"./tox/");
+    char path[UTOX_FILE_NAME_LENGTH];
+    snprintf(path, sizeof path, "./tox/%s.new.txt", id);
+    FILE *fp = fopen(path, "wb");
+    if (!fp) {
+        FAIL("write garbage log");
+    }
+    uint8_t junk[200];
+    for (size_t i = 0; i < sizeof junk; i++) {
+        junk[i] = (uint8_t)(i * 91u + 7u);
+    }
+    fwrite(junk, 1, sizeof junk, fp);
+    fclose(fp);
+
+    size_t n = 0;
+    MSG_HEADER **list = utox_load_chatlog(id, &n, 16, 0);
+    free_loaded(list, n);
+    (void)utox_count_chatlog(id);
+    (void)utox_count_unsent_chatlog(id);
+    unlink_log(id);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_write_chatlog)
@@ -572,5 +601,6 @@ int main(void) {
     RUN_TEST(test_oversized_and_truncated_records)
     RUN_TEST(test_export_chatlog)
     RUN_TEST(test_export_calendar_and_eof)
+    RUN_TEST(test_chatlog_garbage_file)
     return result;
 }

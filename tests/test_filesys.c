@@ -196,6 +196,66 @@ bool test_filesys_non_portable_home(void) {
     return true;
 }
 
+bool test_filesys_read_write_and_read_append(void) {
+    settings.portable_mode = true;
+    native_create_dir((uint8_t *)"./tox/");
+    remove("./tox/rw_create.txt");
+    remove("./tox/ra_test.txt");
+
+    /* READ|WRITE on a missing file must create (posix open/fdopen or Win w+b). */
+    FILE *rw = utox_get_file("rw_create.txt", NULL, UTOX_FILE_OPTS_READ | UTOX_FILE_OPTS_WRITE);
+    if (!rw) {
+        FAIL("READ|WRITE should create missing file");
+    }
+    if (fwrite("xy", 1, 2, rw) != 2) {
+        fclose(rw);
+        FAIL("write through READ|WRITE");
+    }
+    fclose(rw);
+
+    size_t size = 0;
+    FILE *r = utox_get_file("rw_create.txt", &size, UTOX_FILE_OPTS_READ);
+    if (!r || size != 2) {
+        if (r) {
+            fclose(r);
+        }
+        FAIL("READ|WRITE created file size=%zu", size);
+    }
+    fclose(r);
+
+    FILE *w = utox_get_file("ra_test.txt", NULL, UTOX_FILE_OPTS_WRITE);
+    if (!w) {
+        FAIL("seed READ|APPEND file");
+    }
+    fwrite("ab", 1, 2, w);
+    fclose(w);
+
+    FILE *ra = utox_get_file("ra_test.txt", NULL, UTOX_FILE_OPTS_READ | UTOX_FILE_OPTS_APPEND);
+    if (!ra) {
+        FAIL("READ|APPEND open");
+    }
+    if (fseek(ra, 0, SEEK_END) != 0 || fwrite("cd", 1, 2, ra) != 2) {
+        fclose(ra);
+        FAIL("READ|APPEND write at end");
+    }
+    fclose(ra);
+
+    size = 0;
+    r = utox_get_file("ra_test.txt", &size, UTOX_FILE_OPTS_READ);
+    char buf[8] = { 0 };
+    if (!r || size != 4 || fread(buf, 1, 4, r) != 4 || memcmp(buf, "abcd", 4) != 0) {
+        if (r) {
+            fclose(r);
+        }
+        FAIL("READ|APPEND contents");
+    }
+    fclose(r);
+
+    utox_get_file("rw_create.txt", NULL, UTOX_FILE_OPTS_DELETE);
+    utox_get_file("ra_test.txt", NULL, UTOX_FILE_OPTS_DELETE);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     settings.portable_mode = true;
@@ -203,5 +263,6 @@ int main(void) {
     RUN_TEST(test_filesys_append_delete_and_move);
     RUN_TEST(test_filesys_long_name_and_dir_tree);
     RUN_TEST(test_filesys_non_portable_home);
+    RUN_TEST(test_filesys_read_write_and_read_append);
     return result;
 }

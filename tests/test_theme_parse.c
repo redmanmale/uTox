@@ -187,6 +187,34 @@ bool test_theme_load_custom_file(void) {
     return true;
 }
 
+bool test_theme_garbage_blobs(void) {
+    theme_load(THEME_DEFAULT);
+    const uint32_t before = COLOR_MAIN_TEXT;
+
+    read_custom_theme(NULL, 12);
+    read_custom_theme((const uint8_t *)"x", 0);
+
+    uint8_t junk[128];
+    for (size_t i = 0; i < sizeof junk; i++) {
+        junk[i] = (uint8_t)(i * 37u + 11u);
+    }
+    read_custom_theme(junk, sizeof junk);
+
+    uint8_t no_eq[] = "COLOR_MAIN_TEXT no value here\n=AABBCC\n";
+    read_custom_theme(no_eq, sizeof no_eq - 1);
+
+    uint8_t huge_key[80];
+    memset(huge_key, 'K', sizeof huge_key - 1);
+    huge_key[sizeof huge_key - 1] = '=';
+    read_custom_theme(huge_key, sizeof huge_key);
+
+    if (COLOR_MAIN_TEXT != before) {
+        FAIL("garbage theme must not apply a colour");
+    }
+
+    return true;
+}
+
 int main(void) {
     int result = 0;
     settings.portable_mode = true;
@@ -195,5 +223,6 @@ int main(void) {
     RUN_TEST(test_custom_theme_blob);
     RUN_TEST(test_theme_load_builtins);
     RUN_TEST(test_theme_load_custom_file);
+    RUN_TEST(test_theme_garbage_blobs);
     return result;
 }
