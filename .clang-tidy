@@ -1,0 +1,43 @@
+# µTox clang-tidy defaults. Focus on analyzer + high-signal bugprone; avoid C++ modernize.
+# Override locally: clang-tidy --checks=... or edit this file.
+---
+Checks: >
+  -*,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.DeprecatedOrUnsafeBufferHandling,
+  -clang-analyzer-optin.performance.Padding,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  -bugprone-assignment-in-if-condition,
+  -bugprone-narrowing-conversions,
+  -bugprone-signed-char-misuse,
+  -bugprone-casting-through-void,
+  -bugprone-macro-parentheses,
+  -bugprone-reserved-identifier,
+  -bugprone-implicit-widening-of-multiplication-result,
+  -bugprone-multi-level-implicit-pointer-conversion,
+  -bugprone-switch-missing-default-case,
+  -bugprone-incorrect-roundings,
+  cert-*,
+  -cert-err33-c,
+  -cert-err34-c,
+  -cert-msc30-c,
+  -cert-msc32-c,
+  -cert-msc50-cpp,
+  -cert-msc51-cpp,
+  -cert-dcl03-c,
+  -cert-dcl37-c,
+  -cert-dcl51-cpp,
+  -cert-dcl54-cpp,
+  -cert-oop54-cpp,
+  performance-*,
+  -performance-no-int-to-ptr
+
+WarningsAsErrors: ''
+HeaderFilterRegex: '.*/src/.*'
+FormatStyle: none
+CheckOptions:
+  - key: bugprone-sizeof-expression.WarnOnSizeOfPointer
+    value: true
+  - key: bugprone-sizeof-expression.WarnOnSizeOfIntegerExpression
+    value: false

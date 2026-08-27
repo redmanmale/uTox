@@ -17,7 +17,8 @@
 #define inrect(x, y, rx, ry, width, height) \
     ((x) >= (rx) && (y) >= (ry) && (x) < ((rx) + (width)) && (y) < ((ry) + (height)))
 
-// This is hacky and almost never better, try to use an alternative.
+// Copy a string *literal or array* into x (not a char*). sizeof(y) must be the
+// buffer size of y; with a pointer this becomes sizeof(char*) and truncates.
 #define strcpy2(x, y) (memcpy(x, y, sizeof(y) - 1))
 
 // Is the video stream just a selection of the desktop

@@ -185,15 +185,15 @@ void group_peer_add(GROUPCHAT *g, uint32_t peer_id, bool UNUSED(our_peer_number)
         LOG_NOTE("Groupchat", "Needed to calloc peers for this group chat. (%u)" , peer_id);
     }
 
-    const char *default_peer_name = "<unknown>";
+    const char default_peer_name[] = "<unknown>";
 
     // Allocate space for the struct and the dynamic array holding the peer's name.
-    GROUP_PEER *peer = calloc(1, sizeof(GROUP_PEER) + strlen(default_peer_name) + 1);
+    GROUP_PEER *peer = calloc(1, sizeof(GROUP_PEER) + sizeof(default_peer_name));
     if (!peer) {
         LOG_FATAL_ERR(EXIT_MALLOC, "Groupchat", "Unable to allocate space for group peer.");
     }
     strcpy2(peer->name, default_peer_name);
-    peer->name_length = 0;
+    peer->name_length = sizeof(default_peer_name) - 1;
     peer->name_color  = name_color;
     peer->id          = peer_id;
 

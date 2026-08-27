@@ -185,3 +185,40 @@ jobs:
         with:
           name: coverage-html
           path: coverage-html/
+
+  clang-tidy:
+    name: Linux clang-tidy
+    runs-on: ubuntu-24.04
+    # Baseline: report findings, do not fail the PR until checks are cleaned up.
+    # Set CLANG_TIDY_FAIL=1 later to gate merges.
+    env:
+      BUILD: linux
+      CLANG_TIDY_FAIL: "0"
+      CLANG_TIDY_JOBS: "2"
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          fetch-depth: 5
+      - name: Install dependencies
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt -yq install --no-install-recommends \
+            cmake cmake-data check libdbus-1-dev libx11-dev libfreetype6-dev \
+            libfontconfig1-dev libxrender-dev libxext-dev \
+            libsodium-dev libopus-dev libvpx-dev \
+            libopenal-dev libopenal-data libv4l-dev \
+            clang llvm clang-tidy python3
+      - name: Build deps and run clang-tidy
+        run: |
+          set -ex
+          export CC=clang
+          export CXX=clang++
+          ./extra/travis/linux-before.sh
+          ./extra/travis/filter_audio.sh
+          chmod +x ./extra/travis/clang-tidy.sh
+          ./extra/travis/clang-tidy.sh
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: clang-tidy-log
+          path: clang-tidy.log

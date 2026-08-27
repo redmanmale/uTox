@@ -19,6 +19,7 @@
 // UTOX_VERSION_NUMBER, MAIN_HEIGHT, MAIN_WIDTH, all save things..
 #include "main.h"
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <minIni.h>
@@ -253,7 +254,7 @@ static void parse_advanced_section(SETTINGS *config, const char *key,
     } else if (MATCH(NAMEOF(config->proxy_port), key)) {
         config->proxy_port = atoi(value);
     } else if (MATCH(NAMEOF(config->proxy_ip), key)) {
-        strcpy((char *)config->proxy_ip, value);
+        snprintf((char *)config->proxy_ip, sizeof(config->proxy_ip), "%s", value);
     } else if (MATCH(NAMEOF(config->force_proxy), key)) {
         config->force_proxy = STR_TO_BOOL(value);
     } else if (MATCH(NAMEOF(config->block_friend_requests), key)) {

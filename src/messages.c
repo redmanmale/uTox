@@ -134,7 +134,11 @@ static uint32_t message_add(MESSAGES *m, MSG_HEADER *msg) {
     if (m->number < UTOX_MAX_BACKLOG_MESSAGES) {
         if (!m->data || m->extra <= 0) {
             if (m->data) {
-                m->data = realloc(m->data, (m->number + 10) * sizeof(void *));
+                void **tmp = realloc(m->data, (m->number + 10) * sizeof(void *));
+                if (!tmp) {
+                    LOG_FATAL_ERR(EXIT_MALLOC, "Messages", "\n\n\nFATAL ERROR TRYING TO REALLOC FOR MESSAGES.\nTHIS IS A BUG, PLEASE REPORT!\n\n\n");
+                }
+                m->data = tmp;
                 m->extra += 10;
             } else {
                 m->number = 0;

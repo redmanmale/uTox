@@ -378,10 +378,11 @@ void edit_do(EDIT *edit, uint16_t start, uint16_t length, bool remove) {
         }
     }
 
-    edit->history = realloc(edit->history, (edit->history_cur + 1) * sizeof(void *));
-    if (!edit->history) {
+    EDIT_CHANGE **hist = realloc(edit->history, (edit->history_cur + 1) * sizeof(void *));
+    if (!hist) {
         LOG_FATAL_ERR(EXIT_MALLOC, "UI Edit", "Unable to realloc for edit history, this should never happen!");
     }
+    edit->history = hist;
 
     new_change = calloc(1, sizeof(EDIT_CHANGE) + length);
     if (!new_change) {

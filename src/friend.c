@@ -576,11 +576,13 @@ void friend_free(FRIEND *f) {
     free(f->typed);
     free(f->avatar);
 
-    for (uint32_t i = 0; i < f->msg.number; ++i) {
-        MSG_HEADER *msg = f->msg.data[i];
-        message_free(msg);
+    if (f->msg.data) {
+        for (uint32_t i = 0; i < f->msg.number; ++i) {
+            MSG_HEADER *msg = f->msg.data[i];
+            message_free(msg);
+        }
+        free(f->msg.data);
     }
-    free(f->msg.data);
 
     if (f->call_state_self) {
         // postmessage_audio(AUDIO_END, f->number, 0, NULL);

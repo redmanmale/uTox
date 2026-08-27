@@ -291,13 +291,25 @@ void flist_update_shown_list(void) {
  * new group create entry (current 'group create' item becomes the free slot)
  */
 static ITEM *newitem(void) {
+    ITEM     *new_item;
+    uint32_t *new_shown;
+
     if (!item || itemcount == 0) {
         itemcount  = 1;
-        item       = realloc(item, sizeof(ITEM));
-        shown_list = realloc(shown_list, sizeof(uint32_t));
-        if (!item || !shown_list) {
+        new_item  = realloc(item, sizeof(ITEM));
+        new_shown = realloc(shown_list, sizeof(uint32_t));
+        if (!new_item || !new_shown) {
+            /* Preserve a successful half so FATAL cleanup still sees live memory. */
+            if (new_item) {
+                item = new_item;
+            }
+            if (new_shown) {
+                shown_list = new_shown;
+            }
             LOG_FATAL_ERR(EXIT_MALLOC, "flist", "Could not allocate memory for friend list.");
         }
+        item       = new_item;
+        shown_list = new_shown;
         item[0].type      = ITEM_GROUP_CREATE;
         item[0].id_number = UINT32_MAX;
     }
@@ -311,11 +323,19 @@ static ITEM *newitem(void) {
         }
     }
 
-    item       = realloc(item, (itemcount + 1) * sizeof(ITEM));
-    shown_list = realloc(shown_list, (itemcount + 1) * sizeof(uint32_t));
-    if (!item || !shown_list) {
+    new_item  = realloc(item, (itemcount + 1) * sizeof(ITEM));
+    new_shown = realloc(shown_list, (itemcount + 1) * sizeof(uint32_t));
+    if (!new_item || !new_shown) {
+        if (new_item) {
+            item = new_item;
+        }
+        if (new_shown) {
+            shown_list = new_shown;
+        }
         LOG_FATAL_ERR(EXIT_MALLOC, "flist", "Could not allocate memory for friend list.");
     }
+    item       = new_item;
+    shown_list = new_shown;
 
     if (old_selected_index != -1) {
         selected_item = &(item[old_selected_index]);
@@ -1344,7 +1364,7 @@ static void contextmenu_list_onselect(uint8_t i) {
                     }
 
                     char str[g->name_length + 7];
-                    strcpy(str, "/topic ");
+                    memcpy(str, "/topic ", 7);
                     memcpy(str + 7, g->name, g->name_length);
                     edit_setfocus(&edit_chat_msg_group);
                     edit_paste(str, sizeof(str), 0);
