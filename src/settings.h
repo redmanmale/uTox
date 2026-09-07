@@ -55,6 +55,7 @@ typedef struct utox_settings {
     uint8_t  video_fps;
 
     LOG_LVL verbose;
+    bool    verbose_from_cli; /* -v / --silent: do not overwrite from INI */
     FILE *  debug_file;
 
     uint32_t theme;

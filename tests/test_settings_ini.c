@@ -17,6 +17,7 @@ DROPDOWN dropdown_dpi;
 DROPDOWN dropdown_audio_in;
 DROPDOWN dropdown_audio_out;
 DROPDOWN dropdown_global_group_notifications;
+DROPDOWN dropdown_logging;
 
 UISWITCH switch_save_chat_history;
 UISWITCH switch_close_to_tray;
@@ -272,10 +273,13 @@ bool test_config_all_sections(void) {
     fputs("proxy_ip = 10.0.0.1\n", fp);
     fputs("force_proxy = true\n", fp);
     fputs("block_friend_requests = true\n", fp);
+    fputs("log_level = 5\n", fp);
     fclose(fp);
 
     settings.theme = UINT32_MAX;
     settings.video_fps = 0;
+    settings.verbose = LOG_LVL_ERROR;
+    settings.verbose_from_cli = false;
     memset(settings.proxy_ip, 0, sizeof(settings.proxy_ip));
     config_load();
 
@@ -305,6 +309,14 @@ bool test_config_all_sections(void) {
         || settings.proxy_port != 9050 || !settings.force_proxy || !settings.block_friend_requests) {
         unlink_ini();
         FAIL("advanced flags");
+    }
+    if (settings.verbose != LOG_LVL_INFO) {
+        unlink_ini();
+        FAIL("verbose from ini, got %d", (int)settings.verbose);
+    }
+    if (dropdown_logging.selected != (uint16_t)LOG_LVL_INFO) {
+        unlink_ini();
+        FAIL("logging dropdown not synced");
     }
     if (strcmp((char *)settings.proxy_ip, "10.0.0.1") != 0) {
         unlink_ini();
@@ -367,6 +379,7 @@ bool test_config_edge_cases(void) {
     fputs("group_notifications = 2\n", fp);
     fputs("[advanced]\n", fp);
     fputs("proxy_port = 0\n", fp);
+    fputs("log_level = 2\n", fp);
     fputs("[unknown_section]\n", fp);
     fputs("whatever = true\n", fp);
     fclose(fp);
@@ -375,12 +388,18 @@ bool test_config_edge_cases(void) {
     settings.video_fps  = 30;
     settings.proxy_port = 0;
     settings.push_to_talk = true;
+    settings.verbose = LOG_LVL_TRACE;
+    settings.verbose_from_cli = true;
     edit_proxy_port.length = 99;
     config_load();
 
     if (settings.theme != 2) {
         unlink_ini();
         FAIL("cmdline theme should win, got %u", settings.theme);
+    }
+    if (settings.verbose != LOG_LVL_TRACE) {
+        unlink_ini();
+        FAIL("CLI verbose should win over ini, got %d", (int)settings.verbose);
     }
     if (settings.scale != 5) {
         unlink_ini();

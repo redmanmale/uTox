@@ -46,6 +46,7 @@ SETTINGS settings = {
     .group_notifications    = 0,
 
     .verbose = LOG_LVL_ERROR,
+    .verbose_from_cli = false,
     .debug_file = NULL,
 
     // .theme                       // included here to match the full struct
