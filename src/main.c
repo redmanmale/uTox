@@ -201,12 +201,14 @@ void parse_args(int argc, char *argv[],
             }
 
             case 'S': {
-                settings.verbose = LOG_LVL_FATAL;
+                settings.verbose         = LOG_LVL_FATAL;
+                settings.verbose_from_cli = true;
                 break;
             }
 
             case 'v': {
                 settings.verbose++;
+                settings.verbose_from_cli = true;
                 break;
             }
 
