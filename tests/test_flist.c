@@ -595,6 +595,18 @@ bool test_dump_reload_and_pages(void) {
     return true;
 }
 
+/* 86bdb6f8: a second flist_freeall used to free item/shown_list again. */
+bool test_flist_freeall_twice(void) {
+    reset_flist();
+    start_list();
+    FRIEND *alice = live_friend(0, "Alice", true);
+    flist_add_friend(alice, NULL, 0);
+    flist_freeall();
+    list_live = false;
+    flist_freeall();
+    return true;
+}
+
 int main(void) {
     int result = 0;
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -607,6 +619,7 @@ int main(void) {
     RUN_TEST(test_select_last_and_uri_use_shown_index);
     RUN_TEST(test_null_add_and_open_untyped);
     RUN_TEST(test_dump_reload_and_pages);
+    RUN_TEST(test_flist_freeall_twice);
     teardown_list();
     return result;
 }
