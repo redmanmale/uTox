@@ -994,6 +994,40 @@ bool test_messages_read_from_log_page(void) {
     return true;
 }
 
+/* cb451de7: adding a group message while a friend is selected used to
+ * dereference get_friend(group_id). */
+bool test_messages_group_add_while_friend_selected(void) {
+    reset_messages();
+    MESSAGES m;
+    memset(&m, 0, sizeof m);
+    messages_init(&m, 1);
+    SCROLLABLE scroll;
+    attach_scroll(&m, &scroll);
+    m.is_groupchat = true;
+    mock_sel_friend = &test_friend;
+    mock_sel_group = NULL;
+
+    MSG_HEADER *msg = calloc(1, sizeof(MSG_HEADER));
+    if (!msg) {
+        FAIL("alloc group message");
+    }
+    msg->msg_type = MSG_TYPE_TEXT;
+    msg->via.grp.length = 5;
+    msg->via.grp.msg = calloc(1, 5);
+    memcpy(msg->via.grp.msg, "hello", 5);
+    msg->via.grp.author_length = 3;
+    msg->via.grp.author = calloc(1, 3);
+    memcpy(msg->via.grp.author, "Ann", 3);
+
+    uint32_t n = message_add_group(&m, msg);
+    if (n == UINT32_MAX || m.number != 1 || m.data[0] != msg) {
+        messages_clear_all(&m);
+        FAIL("group message while a friend is selected, n=%u number=%u", n, m.number);
+    }
+    messages_clear_all(&m);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     pthread_mutex_init(&messages_lock, NULL);
@@ -1014,6 +1048,7 @@ int main(void) {
     RUN_TEST(test_messages_char_scroll_clamps);
     RUN_TEST(test_messages_init_clears_existing);
     RUN_TEST(test_messages_reverse_selection_drag);
+    RUN_TEST(test_messages_group_add_while_friend_selected);
     pthread_mutex_destroy(&messages_lock);
     return result;
 }
