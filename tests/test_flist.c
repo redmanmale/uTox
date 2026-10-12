@@ -607,6 +607,29 @@ bool test_flist_freeall_twice(void) {
     return true;
 }
 
+/* c47612ee: realloc in newitem() used to leave selected_item dangling. */
+bool test_flist_select_then_add(void) {
+    reset_flist();
+    start_list();
+    FRIEND *alice = live_friend(0, "Alice", true);
+    FRIEND *bob = live_friend(1, "Bob", true);
+    GROUPCHAT *room = live_group(0, "Room");
+    flist_add_friend(alice, NULL, 0);
+    flist_selectchat(0);
+    if (flist_get_sel_friend() != alice) {
+        FAIL("select alice first");
+    }
+    flist_add_friend(bob, NULL, 0);
+    if (flist_get_sel_friend() != alice) {
+        FAIL("adding bob must keep alice selected");
+    }
+    flist_add_group(room);
+    if (flist_get_sel_friend() != alice) {
+        FAIL("adding a group must keep alice selected");
+    }
+    return true;
+}
+
 int main(void) {
     int result = 0;
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -620,6 +643,7 @@ int main(void) {
     RUN_TEST(test_null_add_and_open_untyped);
     RUN_TEST(test_dump_reload_and_pages);
     RUN_TEST(test_flist_freeall_twice);
+    RUN_TEST(test_flist_select_then_add);
     teardown_list();
     return result;
 }
