@@ -654,6 +654,62 @@ bool test_friend_online_outgoing_resume(void) {
     return true;
 }
 
+/* Issue 1331: friend going offline called fileno() on a missing resume FILE. */
+bool test_friend_offline_null_resume(void) {
+    reset_ft();
+    FILE *fp = make_payload("./tox/ft_off.bin", "hello");
+    if (!fp) {
+        FAIL("open payload");
+    }
+    uint8_t name[] = "ft_off.bin";
+    uint32_t n = ft_send_file(TOX_DUMMY, 0, fp, name, strlen((char *)name), NULL);
+    if (n == UINT32_MAX) {
+        fclose(fp);
+        FAIL("send file");
+    }
+    FILE_TRANSFER *ft = &test_friend.ft_outgoing[n];
+    ft->status     = FILE_TRANSFER_STATUS_ACTIVE;
+    ft->resumeable = true;
+    if (ft->resume_file) {
+        fclose(ft->resume_file);
+        ft->resume_file = NULL;
+    }
+
+    ft_friend_offline(TOX_DUMMY, 0);
+    if (test_friend.ft_outgoing && test_friend.ft_outgoing[n].in_use) {
+        FAIL("null resume_file must still break the transfer");
+    }
+
+    cancel_open();
+    remove("./tox/ft_off.bin");
+
+    reset_ft();
+    fp = make_payload("./tox/ft_off2.bin", "hello");
+    if (!fp) {
+        FAIL("open payload 2");
+    }
+    n = ft_send_file(TOX_DUMMY, 0, fp, name, strlen((char *)name), NULL);
+    if (n == UINT32_MAX) {
+        fclose(fp);
+        FAIL("send file 2");
+    }
+    ft = &test_friend.ft_outgoing[n];
+    ft->status     = FILE_TRANSFER_STATUS_ACTIVE;
+    ft->resumeable = true;
+    if (ft->resume_file) {
+        fclose(ft->resume_file);
+    }
+
+    ft_friend_offline(TOX_DUMMY, 0);
+    if (test_friend.ft_outgoing && test_friend.ft_outgoing[n].in_use) {
+        FAIL("closed resume FILE must still break the transfer");
+    }
+
+    cancel_open();
+    remove("./tox/ft_off2.bin");
+    return true;
+}
+
 int main(void) {
     int result = 0;
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -678,6 +734,7 @@ int main(void) {
     RUN_TEST(test_incoming_chunk_speed);
     RUN_TEST(test_incoming_inline_not_png);
     RUN_TEST(test_friend_online_outgoing_resume);
+    RUN_TEST(test_friend_offline_null_resume);
     cancel_open();
     free(self.png_data);
     self.png_data = NULL;
