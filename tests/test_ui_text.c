@@ -110,10 +110,63 @@ bool test_ui_text_draw_smoke(void) {
     return true;
 }
 
+/* Issue 768: a message that begins with '\n' made the red-text scan read the
+ * byte before the buffer. A '<' planted there used to paint the line red. */
+bool test_ui_text_leading_newline(void) {
+    mock_ui_reset();
+    COLOR_MAIN_TEXT_RED = 0x00FF0001;
+    const uint16_t lh = 12;
+
+    char only_nl[] = "<\n";
+    char *nl       = only_nl + 1;
+    if (text_height(100, lh, nl, 1) != 2 * lh) {
+        FAIL("lone leading newline should be two lines, got %d", text_height(100, lh, nl, 1));
+    }
+    utox_draw_text_multiline_within_box(0, 0, 80, 0, 80, lh, nl, 1, 0, 0, 0, 0, true);
+    if (mock_setcolor_red_count != 0) {
+        FAIL("newline-only message must not turn red from the byte before it, got %d",
+             mock_setcolor_red_count);
+    }
+
+    mock_ui_reset();
+    COLOR_MAIN_TEXT_RED = 0x00FF0001;
+    char hello[] = "<\nhello";
+    char *msg    = hello + 1;
+    if (text_height(100, lh, msg, 6) != 2 * lh) {
+        FAIL("\\nhello should be two lines, got %d", text_height(100, lh, msg, 6));
+    }
+    uint16_t second = hittextmultiline(0, 100, lh, 100, lh, msg, 6, true);
+    if (second != 1) {
+        FAIL("second line of \\nhello should start at 1, got %u", second);
+    }
+    int y = utox_draw_text_multiline_within_box(0, 0, 80, 0, 80, lh, msg, 6, 0, 0, 0, 0, true);
+    if (y != 2 * lh) {
+        FAIL("draw height of \\nhello should be two lines, got %d", y);
+    }
+    if (mock_setcolor_red_count != 0) {
+        FAIL("leading newline must not turn red from the byte before the message, got %d",
+             mock_setcolor_red_count);
+    }
+
+    /* The line after the leading newline really does end with '<'. That is one
+     * red set. The byte before the buffer must not add a second one. */
+    mock_ui_reset();
+    COLOR_MAIN_TEXT_RED = 0x00FF0001;
+    char red[] = "<\nline<";
+    char *redmsg = red + 1;
+    utox_draw_text_multiline_within_box(0, 0, 80, 0, 80, lh, redmsg, 6, 0, 0, 0, 0, true);
+    if (mock_setcolor_red_count != 1) {
+        FAIL("line ending in < after a leading newline should set red once, got %d",
+             mock_setcolor_red_count);
+    }
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_ui_text_height_and_hit)
     RUN_TEST(test_ui_text_lineup_linedown)
     RUN_TEST(test_ui_text_draw_smoke)
+    RUN_TEST(test_ui_text_leading_newline)
     return result;
 }

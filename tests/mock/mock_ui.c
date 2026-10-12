@@ -20,6 +20,7 @@ int mock_draw_alpha_count;
 int mock_draw_text_count;
 int mock_last_font;
 uint32_t mock_last_color;
+int mock_setcolor_red_count;
 
 int mock_thread_count;
 UTOX_MSG mock_last_utox_msg;
@@ -49,9 +50,10 @@ void mock_ui_reset(void) {
     mock_draw_fill_count  = 0;
     mock_draw_frame_count = 0;
     mock_draw_alpha_count = 0;
-    mock_draw_text_count  = 0;
-    mock_last_font        = 0;
-    mock_last_color       = 0;
+    mock_draw_text_count    = 0;
+    mock_last_font          = 0;
+    mock_last_color         = 0;
+    mock_setcolor_red_count = 0;
     mock_thread_count     = 0;
     mock_last_utox_msg    = 0;
     cursor                = CURSOR_NONE;
@@ -220,6 +222,9 @@ void setfont(int id) {
 uint32_t setcolor(uint32_t color) {
     uint32_t prev    = mock_last_color;
     mock_last_color = color;
+    if (color == COLOR_MAIN_TEXT_RED) {
+        mock_setcolor_red_count++;
+    }
     return prev;
 }
 
