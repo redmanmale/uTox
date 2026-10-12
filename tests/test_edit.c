@@ -461,6 +461,37 @@ bool test_edit_undo_then_type(void) {
     return true;
 }
 
+/* a7ef7c7e: ctrl-backspace used to walk past the start of the buffer. */
+bool test_edit_ctrl_backspace(void) {
+    reset_edit_counts();
+    EDIT e = make_edit(false);
+    char hello[] = "hello world";
+    edit_setstr(&e, hello, 11);
+    edit_setfocus(&e);
+    edit_setcursorpos(&e, 11);
+
+    edit_char(KEY_BACK, true, TEST_EMOD_CTRL);
+    if (e.length != 6 || memcmp(e.data, "hello ", 6) != 0) {
+        FAIL("ctrl-backspace should drop the last word, got '%.*s'", e.length, e.data);
+    }
+
+    edit_setcursorpos(&e, 0);
+    edit_char(KEY_BACK, true, TEST_EMOD_CTRL);
+    if (e.length != 6 || memcmp(e.data, "hello ", 6) != 0) {
+        FAIL("ctrl-backspace at start must not change the buffer");
+    }
+
+    edit_setstr(&e, hello, 0);
+    edit_setcursorpos(&e, 0);
+    edit_char(KEY_BACK, true, TEST_EMOD_CTRL);
+    if (e.length != 0) {
+        FAIL("ctrl-backspace on empty field, got %u", e.length);
+    }
+
+    finish_edit(&e);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_edit_setstr_focus_cursor)
@@ -469,5 +500,6 @@ int main(void) {
     RUN_TEST(test_edit_enter_tab_focus_switch)
     RUN_TEST(test_edit_multiline_and_mouse)
     RUN_TEST(test_edit_undo_then_type)
+    RUN_TEST(test_edit_ctrl_backspace)
     return result;
 }
