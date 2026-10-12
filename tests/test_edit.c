@@ -431,6 +431,36 @@ bool test_edit_multiline_and_mouse(void) {
     return true;
 }
 
+/* d841c3ed: type 3 bytes, undo twice, type another byte. Undo used to free
+ * history after realloc, so the next insert crashed. */
+bool test_edit_undo_then_type(void) {
+    reset_edit_counts();
+    EDIT e = make_edit(false);
+    edit_setfocus(&e);
+    edit_setcursorpos(&e, 0);
+
+    edit_char('a', false, 0);
+    edit_char('b', false, 0);
+    edit_char('c', false, 0);
+    if (e.length != 3 || memcmp(e.data, "abc", 3) != 0) {
+        FAIL("typed abc");
+    }
+
+    edit_char('z', true, TEST_EMOD_CTRL);
+    edit_char('z', true, TEST_EMOD_CTRL);
+    if (e.length != 1 || e.data[0] != 'a') {
+        FAIL("two undos should leave a, got '%.*s'", e.length, e.data);
+    }
+
+    edit_char('d', false, 0);
+    if (e.length != 2 || memcmp(e.data, "ad", 2) != 0) {
+        FAIL("type after undo, got '%.*s'", e.length, e.data);
+    }
+
+    finish_edit(&e);
+    return true;
+}
+
 int main(void) {
     int result = 0;
     RUN_TEST(test_edit_setstr_focus_cursor)
@@ -438,5 +468,6 @@ int main(void) {
     RUN_TEST(test_edit_selection_paste_undo)
     RUN_TEST(test_edit_enter_tab_focus_switch)
     RUN_TEST(test_edit_multiline_and_mouse)
+    RUN_TEST(test_edit_undo_then_type)
     return result;
 }
