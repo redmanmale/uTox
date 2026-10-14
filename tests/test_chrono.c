@@ -2,12 +2,13 @@
 
 #include "test.h"
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <time.h>
 
 void thread_callback(void *args) {
-    *(bool *)args = true;
+    atomic_store_explicit((atomic_bool *)args, true, memory_order_release);
 }
 
 bool test_chrono_target(void) {
@@ -17,7 +18,7 @@ bool test_chrono_target(void) {
      * to use the stack.
      */
     CHRONO_INFO info;
-    bool finished = false;
+    atomic_bool finished = false;
 
     info.ptr = 0;
     info.step = 5;
@@ -31,7 +32,7 @@ bool test_chrono_target(void) {
 
     yieldcpu(30);
 
-    while (!finished) {
+    while (!atomic_load_explicit(&finished, memory_order_acquire)) {
         yieldcpu(1);
     }
 
@@ -77,7 +78,7 @@ bool test_chrono_null_and_end(void) {
         FAIL("quiet chrono_start");
     }
     int qspins = 0;
-    while (!chrono_thread_init && (intptr_t)quiet.ptr == 0 && qspins++ < 1000) {
+    while (!atomic_load_explicit(&chrono_thread_init, memory_order_acquire) && qspins++ < 1000) {
         yieldcpu(1);
     }
     if (!chrono_end(&quiet)) {
@@ -101,7 +102,7 @@ bool test_chrono_null_and_end(void) {
     /* Don't call chrono_end before the worker sets chrono_thread_init — otherwise
      * we return while the thread still owns this stack frame. */
     int spins = 0;
-    while (!chrono_thread_init && (intptr_t)info.ptr == 0 && spins++ < 1000) {
+    while (!atomic_load_explicit(&chrono_thread_init, memory_order_acquire) && spins++ < 1000) {
         yieldcpu(1);
     }
     if (!chrono_end(&info)) {

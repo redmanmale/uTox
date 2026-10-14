@@ -19,7 +19,8 @@ bool native_create_dir_tree(const char *path) {
         return false;
     }
 
-    char *buff = calloc(1, size);
+    /* size + 1: mkdir/stat need a NUL; calloc(size) left the terminator past the block. */
+    char *buff = calloc(1, size + 1);
     if (!buff) {
         LOG_ERR("Filesys", "Unable to allocate memory for buffer.");
         return false;
@@ -28,6 +29,7 @@ bool native_create_dir_tree(const char *path) {
     for (size_t i = 1; i < size; ++i) { // i = 1 to skip root '/'
         if (path[i] == '/') {
             memcpy(buff, path, i + 1);
+            buff[i + 1] = '\0';
             if (!native_create_dir((uint8_t *)buff)) {
                 free(buff);
                 return false;

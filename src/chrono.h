@@ -1,6 +1,7 @@
 #ifndef CHRONO_H
 #define CHRONO_H
 
+#include <stdatomic.h>
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -15,7 +16,8 @@ struct chrono_info {
 
 typedef struct chrono_info CHRONO_INFO;
 
-extern bool chrono_thread_init;
+/* Shared with chrono_end / tests — must be atomic for TSan and defined behavior. */
+extern atomic_bool chrono_thread_init;
 
 /*
  * Starts the chrono thread using the information from info

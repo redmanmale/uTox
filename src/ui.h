@@ -30,13 +30,18 @@ typedef struct scrollable SCROLLABLE;
 // Windows supplies its own RGB function.
 #include <windows.h>  // TODO, don't do this
 #elif defined __ANDROID__
-#define RGB(r, g, b) ((r) | ((g) << 8) | ((b) << 16))
+/* Cast before shift: signed int << N is UB when the result is not representable
+ * (e.g. RGB(rand(), …) with glibc RAND_MAX). Match Windows RGB() and clamp to bytes. */
+#define RGB(r, g, b) \
+    (((uint32_t)(uint8_t)(r)) | (((uint32_t)(uint8_t)(g)) << 8) | (((uint32_t)(uint8_t)(b)) << 16))
 #elif defined __OBJC__
 // xlib and cocoa use the same format for this, but I left both cases here
 // in case I want to use this #ifdef construct elsewhere.
-#define RGB(r, g, b) (((r) << 16) | ((g) << 8) | (b))
+#define RGB(r, g, b) \
+    ((((uint32_t)(uint8_t)(r)) << 16) | (((uint32_t)(uint8_t)(g)) << 8) | ((uint32_t)(uint8_t)(b)))
 #else
-#define RGB(r, g, b) (((r) << 16) | ((g) << 8) | (b))
+#define RGB(r, g, b) \
+    ((((uint32_t)(uint8_t)(r)) << 16) | (((uint32_t)(uint8_t)(g)) << 8) | ((uint32_t)(uint8_t)(b)))
 #endif
 
 // Mouse stuff
