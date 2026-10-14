@@ -98,6 +98,8 @@ jobs:
       STATIC_TOXCORE: "ON"
       ENABLE_DBUS: "OFF"
       ENABLE_ASAN: "OFF"
+      ENABLE_UBSAN: "OFF"
+      ENABLE_TSAN: "OFF"
       ENABLE_FILTERAUDIO: "ON"
       # Keep cache inside the workspace so debug_failure.sh can see it.
       CACHE_DIR: ${{ github.workspace }}/cache/linux-musl
@@ -228,3 +230,83 @@ jobs:
         with:
           name: coverage-html
           path: coverage-html/
+
+  linux-tsan:
+    name: Linux TSan (Clang)
+    runs-on: ubuntu-24.04
+    env:
+      BUILD: linux
+      COMPILER: clang
+      ENABLE_WERROR: "ON"
+      ENABLE_ASAN: "OFF"
+      ENABLE_UBSAN: "ON"
+      ENABLE_TSAN: "ON"
+      ENABLE_LTO: "OFF"
+      CMAKE_BUILD_TYPE: Debug
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          fetch-depth: 5
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt -yq install --no-install-recommends \
+            cmake cmake-data check libdbus-1-dev libx11-dev libfreetype6-dev \
+            libfontconfig1-dev libxrender-dev libxext-dev \
+            libsodium-dev libopus-dev libvpx-dev \
+            libopenal-dev libopenal-data libv4l-dev \
+            clang llvm
+      - name: Build and test
+        run: |
+          set -ex
+          export CC=clang CXX=clang++
+          ./extra/ci/linux-before.sh
+          ./extra/ci/filter_audio.sh
+          ./extra/ci/linux-script.sh
+      - name: Dump cache on failure
+        if: failure()
+        run: ./extra/ci/debug_failure.sh || true
+        env:
+          BUILD: linux
+
+  linux-valgrind:
+    name: Linux Valgrind Memcheck
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      BUILD: linux
+      COMPILER: gcc
+      ENABLE_WERROR: "ON"
+      ENABLE_ASAN: "OFF"
+      ENABLE_UBSAN: "OFF"
+      ENABLE_TSAN: "OFF"
+      ENABLE_LTO: "OFF"
+      USE_VALGRIND: "ON"
+      CMAKE_BUILD_TYPE: Debug
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: true
+          fetch-depth: 5
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo DEBIAN_FRONTEND=noninteractive apt -yq install --no-install-recommends \
+            cmake cmake-data check libdbus-1-dev libx11-dev libfreetype6-dev \
+            libfontconfig1-dev libxrender-dev libxext-dev \
+            libsodium-dev libopus-dev libvpx-dev \
+            libopenal-dev libopenal-data libv4l-dev \
+            valgrind
+      - name: Build and test under Valgrind
+        run: |
+          set -ex
+          export CC=gcc CXX=g++
+          ./extra/ci/linux-before.sh
+          ./extra/ci/filter_audio.sh
+          ./extra/ci/linux-script.sh
+      - name: Dump cache on failure
+        if: failure()
+        run: ./extra/ci/debug_failure.sh || true
+        env:
+          BUILD: linux

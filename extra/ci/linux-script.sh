@@ -25,6 +25,15 @@ set -- \
 if [ -n "${ENABLE_ASAN:-}" ]; then
   set -- "$@" -DENABLE_ASAN="$ENABLE_ASAN"
 fi
+if [ -n "${ENABLE_UBSAN:-}" ]; then
+  set -- "$@" -DENABLE_UBSAN="$ENABLE_UBSAN"
+fi
+if [ -n "${ENABLE_TSAN:-}" ]; then
+  set -- "$@" -DENABLE_TSAN="$ENABLE_TSAN"
+fi
+if [ -n "${ENABLE_LTO:-}" ]; then
+  set -- "$@" -DENABLE_LTO="$ENABLE_LTO"
+fi
 
 cmake . "$@"
 make

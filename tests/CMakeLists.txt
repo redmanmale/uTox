@@ -8,8 +8,10 @@ function(make_test name)
     add_test(NAME test_${name} COMMAND test_${name})
 endfunction()
 
+# @ONLY: leave shell ${VAR} expansions in run_tests.sh alone.
 configure_file(${utoxTESTS_SOURCE_DIR}/run_tests.sh
-               ${uTox_BINARY_DIR}/run_tests.sh)
+               ${uTox_BINARY_DIR}/run_tests.sh
+               @ONLY)
 
 #
 # generic testing defines
